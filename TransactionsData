@@ -1,0 +1,33 @@
+#!/bin/bash 
+
+mkdir TransactionsData
+cd TransactionsData
+
+counter= 0
+
+for i in {14671980..14671985}; do
+        block="$(curl http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
+        for row in $(echo "${block}" | jq -r '.transactions[].trx.transaction | @base64'); do
+                _jq() {
+                        echo ${row} | base64 --decode | jq -r ${1}
+                }
+                transaction="$(echo $(_jq '.'))"
+                echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                #echo $transaction
+                echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+
+                for act in $(echo "${transaction}" | jq -r '.actions[] | @base64'); do
+                        _jq() {
+                                echo ${act} | base64 --decode | jq -r ${1}
+                        }
+                        action="$(echo $(_jq '.'))"
+                        echo "___________________________"
+                        let "counter++"
+                        #echo $action >> File$counter.txt
+                        echo $counter
+                        echo "___________________________"
+
+                done
+        done
+        echo "+++++++++++++++++"
+done
