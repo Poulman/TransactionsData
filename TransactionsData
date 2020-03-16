@@ -1,21 +1,25 @@
 #!/bin/bash 
 
-mkdir TransactionsData
-cd TransactionsData
-
-counter= 0
+mkdir Transactions
+cd Transactions
+counter=0
 
 for i in {14671980..14671985}; do
-        block="$(curl http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
+        #block="$(curl http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
+        block="$(curl http://jungle2.cryptolions.io/v1/chain/get_block --request POST --data '{"block_num_or_id":'$i'}')"
+        #block="$(curl --header "Content-Type: application/json" --request POST --data '{"code":"eosio","action":"unregprod","binargs":"9073f6d149b33055"}')"
         for row in $(echo "${block}" | jq -r '.transactions[].trx.transaction | @base64'); do
                 _jq() {
-                        echo ${row} | base64 --decode | jq -r ${1}
+                        echo ${row} | base64 --decode | jq -r  ${1}
                 }
+                #if [[ -z "$row" ]]; then
                 transaction="$(echo $(_jq '.'))"
                 echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-                #echo $transaction
+                echo $transaction
                 echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-
+                #fi
+                #--slurpfile a f        
+                #for act in $(echo "${transaction}" | jq '.actions[] | @base64'); do
                 for act in $(echo "${transaction}" | jq -r '.actions[] | @base64'); do
                         _jq() {
                                 echo ${act} | base64 --decode | jq -r ${1}
@@ -23,7 +27,7 @@ for i in {14671980..14671985}; do
                         action="$(echo $(_jq '.'))"
                         echo "___________________________"
                         let "counter++"
-                        #echo $action >> File$counter.txt
+                        echo $action >> File$counter.txt
                         echo $counter
                         echo "___________________________"
 
