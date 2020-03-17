@@ -1,29 +1,29 @@
 #!/bin/bash 
 
-mkdir TransactionsData
-cd TransactionsData
-
-counter= 0
+mkdir Transactions
+cd Transactions
+counter=0
 
 for i in {14671980..14671985}; do
-        block="$(curl http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
+        block="$(curl -s http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
         for row in $(echo "${block}" | jq -r '.transactions[].trx.transaction | @base64'); do
                 _jq() {
-                        echo ${row} | base64 --decode | jq -r ${1}
+                        echo ${row} | base64 --decode | jq -r  ${1}
                 }
                 transaction="$(echo $(_jq '.'))"
-                echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-                #echo $transaction
-                echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-
                 for act in $(echo "${transaction}" | jq -r '.actions[] | @base64'); do
                         _jq() {
                                 echo ${act} | base64 --decode | jq -r ${1}
                         }
                         action="$(echo $(_jq '.'))"
+                        data="$(echo $(_jq '.data'))"
                         echo "___________________________"
+                        type="$(echo $(_jq '.data|type=="string"'))"
+                        if "$type"; then
+                                data_bin="$(curl --header "Content-Type: application/json" --request POST --data '{"code":"eosio.token","action":"transfer","binargs":'$data'}' http://jungle.cryptolions.io:8888/v1/chain/abi_bin_to_json)"
+                        fi
                         let "counter++"
-                        #echo $action >> File$counter.txt
+                        echo $data_bin, $action >> File$counter.txt
                         echo $counter
                         echo "___________________________"
 
