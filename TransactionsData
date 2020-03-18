@@ -1,10 +1,12 @@
 #!/bin/bash 
-
-mkdir Transactions
+Transactions="/home/ambi/Scripts/Transactions"
+if [ ! -d "$Transactions" ]; then
+        mkdir Transactions
+fi
 cd Transactions
 counter=0
 
-for i in {14671980..14671985}; do
+for i in {1..100}; do
         block="$(curl -s http://jungle2.cryptolions.io/v1/chain/get_block -X POST -d '{"block_num_or_id":'$i'}')"
         for row in $(echo "${block}" | jq -r '.transactions[].trx.transaction | @base64'); do
                 _jq() {
@@ -17,16 +19,13 @@ for i in {14671980..14671985}; do
                         }
                         action="$(echo $(_jq '.'))"
                         data="$(echo $(_jq '.data'))"
-                        echo "___________________________"
                         type="$(echo $(_jq '.data|type=="string"'))"
                         if "$type"; then
                                 data_bin="$(curl --header "Content-Type: application/json" --request POST --data '{"code":"eosio.token","action":"transfer","binargs":'$data'}' http://jungle.cryptolions.io:8888/v1/chain/abi_bin_to_json)"
                         fi
                         let "counter++"
-                        echo $data_bin, $action >> File$counter.txt
-                        echo $counter
-                        echo "___________________________"
-
+                        echo $action, $data_bin >> File$counter.txt
+                        echo $counter   
                 done
         done
         echo "+++++++++++++++++"
